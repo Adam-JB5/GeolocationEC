@@ -10,48 +10,59 @@ function init() {
 };
 
 function successFunction(position) {
-    let lat = position.coords.latitude;
-    let longitud = position.coords.longitude;
-    muestraMapa(lat, longitud);
-    console.log(lat);
-    console.log(longitud);
+
+
+    let arrayLatitud = [43.3797688361451, 43.380343335249556, 43.3805246345095, 43.38006456222384, 43.38059091582145];
+    let arrayLongitud = [-3.2172797756807205, -3.2169249748311204, -3.217362174902788, -3.218856165308212, -3.218773016873821];
+    
+    muestraMapa(arrayLatitud, arrayLongitud);
+
+    
 };
 
-function muestraMapa(lat, longitud) {
+function muestraMapa(arrayLat, arrayLong) {
 
-    map = new OpenLayers.Map("basicMap");
-    var mapnik = new OpenLayers.Layer.OSM();
-    var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
-    var toProjection = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
-    var position = new OpenLayers.LonLat(longitud, lat).transform(fromProjection, toProjection);
-    var zoom = 17;
+    // Crear el mapa
+    let map = new OpenLayers.Map("basicMap");
+    let mapnik = new OpenLayers.Layer.OSM();
+    let fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+    let toProjection = new OpenLayers.Projection("EPSG:900913");  // to Spherical Mercator Projection
+    let zoom = 17;
 
     map.addLayer(mapnik);
 
-    var markers = new OpenLayers.Layer.Markers("Markers");
+    // Crear capa de marcadores
+    let markers = new OpenLayers.Layer.Markers("Markers");
     map.addLayer(markers);
 
-    var marker = new OpenLayers.Marker(position);
+    // Agregar marcadores
+    for (let i = 0; i < arrayLat.length; i++) {
+        let position = new OpenLayers.LonLat(arrayLong[i], arrayLat[i]).transform(fromProjection, toProjection);
+        let marker = new OpenLayers.Marker(position);
 
-    markers.addMarker(marker);
+        markers.addMarker(marker);
 
-    map.setCenter(position, zoom);
+        // Evento mouseover para mostrar el popup
+        marker.events.register('mouseover', marker, function(evt) {
+            mostrarPopup(evt, arrayLat[i], arrayLong[i], i);
+        });
 
-    // Evento mouseover para mostrar el popup
-    marker.events.register('mouseover', marker, function(evt) {
-        mostrarPopup(evt, lat, longitud);
-    });
+        // Evento mouseout para quitar el popup
+        marker.events.register('mouseout', marker, function(evt) {
+            quitarPopup();
+        });
+    }
 
-    // Evento mouseout para quitar el popup
-    marker.events.register('mouseout', marker, function(evt) {
-        quitarPopup();
-    });
+    // Centrar el mapa en el primer marcador
+    let centerPosition = new OpenLayers.LonLat(arrayLong[0], arrayLat[0]).transform(fromProjection, toProjection);
+    map.setCenter(centerPosition, zoom);
 }
 
 let div;
+let audio;
 
 // Mostrar el popup
-function mostrarPopup(evt, lat, longitud) {
+function mostrarPopup(evt, lat, longitud, iteracion) {
     if (!div) {
         div = document.createElement("div");
         div.style.top = "10px";
@@ -68,6 +79,13 @@ function mostrarPopup(evt, lat, longitud) {
 
         document.body.appendChild(div);
 
+
+        audio = new Audio(`./js/audio/marza${iteracion+1}.mp3`);
+
+        audio.play();
+
+        
+
     }
 
     
@@ -78,6 +96,11 @@ function quitarPopup() {
     if (div) {
         document.body.removeChild(div);
         div = null;
+
+
+        audio.pause();
+        audio.currentTime = 0;
+
     }
 }
 
